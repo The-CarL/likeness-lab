@@ -23,6 +23,7 @@ import argparse
 import shutil
 import subprocess
 import sys
+import urllib.request
 from pathlib import Path
 
 # Extensions the training pipeline can read
@@ -111,6 +112,58 @@ def find_images(directory: Path) -> list[Path]:
     return images
 
 
+FACE_MODEL_URL = "https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/latest/blaze_face_short_range.tflite"
+FACE_MODEL_PATH = Path(__file__).parent / "blaze_face_short_range.tflite"
+
+
+def _ensure_face_model() -> Path:
+    """Download the MediaPipe face detection model if not already cached."""
+    if not FACE_MODEL_PATH.exists():
+        print("  Downloading face detection model...")
+        urllib.request.urlretrieve(FACE_MODEL_URL, FACE_MODEL_PATH)
+    return FACE_MODEL_PATH
+
+
+def _detect_faces(image_path: Path) -> list | None:
+    """
+    Detect faces using the MediaPipe Tasks API (0.10.14+).
+
+    Returns a list of (x, y, w, h) bounding boxes in pixel coordinates,
+    or None if detection fails.
+    """
+    try:
+        import mediapipe as mp
+        from PIL import Image as PILImage
+    except ImportError:
+        print("ERROR: Face detection requires mediapipe and Pillow.")
+        print("Install with: pip install mediapipe Pillow")
+        sys.exit(1)
+
+    model_path = _ensure_face_model()
+
+    # Load image via PIL → mediapipe.Image
+    pil_img = PILImage.open(image_path).convert("RGB")
+    import numpy as np
+    mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=np.array(pil_img))
+
+    options = mp.tasks.vision.FaceDetectorOptions(
+        base_options=mp.tasks.BaseOptions(model_asset_path=str(model_path)),
+        min_detection_confidence=0.5,
+    )
+    with mp.tasks.vision.FaceDetector.create_from_options(options) as detector:
+        result = detector.detect(mp_image)
+
+    if not result.detections:
+        return []
+
+    w, h = pil_img.size
+    boxes = []
+    for det in result.detections:
+        bb = det.bounding_box
+        boxes.append((bb.origin_x, bb.origin_y, bb.width, bb.height))
+    return boxes
+
+
 def blur_face(image_path: Path, output_path: Path) -> bool:
     """
     Detect and blur the face in an image to create a "before" control image.
@@ -122,11 +175,10 @@ def blur_face(image_path: Path, output_path: Path) -> bool:
     """
     try:
         import cv2
-        import mediapipe as mp
         import numpy as np
     except ImportError:
-        print("ERROR: Face blur requires opencv-python and mediapipe.")
-        print("Install with: pip install opencv-python mediapipe")
+        print("ERROR: Face blur requires opencv-python.")
+        print("Install with: pip install opencv-python")
         sys.exit(1)
 
     img = cv2.imread(str(image_path))
@@ -135,55 +187,49 @@ def blur_face(image_path: Path, output_path: Path) -> bool:
         return False
 
     h, w = img.shape[:2]
+    boxes = _detect_faces(image_path)
 
-    # Detect face using MediaPipe
-    mp_face = mp.solutions.face_detection
-    with mp_face.FaceDetection(model_selection=1, min_detection_confidence=0.5) as detector:
-        rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        results = detector.process(rgb)
-
-        if not results.detections:
-            print(f"  WARNING: No face detected in {image_path.name}.")
-            # Still create the control image — just copy the original with slight blur
-            blurred = cv2.GaussianBlur(img, (25, 25), 15)
-            cv2.imwrite(str(output_path), blurred)
-            return True
-
-        # Use the first (most confident) detection
-        detection = results.detections[0]
-        bbox = detection.location_data.relative_bounding_box
-
-        # Expand bounding box by 50% to cover the full head area
-        cx = bbox.xmin + bbox.width / 2
-        cy = bbox.ymin + bbox.height / 2
-        bw = bbox.width * 1.5
-        bh = bbox.height * 1.5
-
-        x1 = max(0, int((cx - bw / 2) * w))
-        y1 = max(0, int((cy - bh / 2) * h))
-        x2 = min(w, int((cx + bw / 2) * w))
-        y2 = min(h, int((cy + bh / 2) * h))
-
-        # Apply heavy Gaussian blur to the face region
-        face_region = img[y1:y2, x1:x2]
-        kernel_size = max(99, (min(x2 - x1, y2 - y1) // 2) * 2 + 1)
-        blurred_face = cv2.GaussianBlur(face_region, (kernel_size, kernel_size), 50)
-
-        # Create an elliptical mask for smooth blending
-        mask = np.zeros((y2 - y1, x2 - x1), dtype=np.float32)
-        center = ((x2 - x1) // 2, (y2 - y1) // 2)
-        axes = ((x2 - x1) // 2, (y2 - y1) // 2)
-        cv2.ellipse(mask, center, axes, 0, 0, 360, 1.0, -1)
-        mask = cv2.GaussianBlur(mask, (31, 31), 10)
-        mask = mask[:, :, np.newaxis]
-
-        # Blend blurred face with original
-        blended = (blurred_face * mask + face_region * (1 - mask)).astype(np.uint8)
-        result = img.copy()
-        result[y1:y2, x1:x2] = blended
-
-        cv2.imwrite(str(output_path), result)
+    if not boxes:
+        print(f"  WARNING: No face detected in {image_path.name}.")
+        # Still create the control image — just copy the original with slight blur
+        blurred = cv2.GaussianBlur(img, (25, 25), 15)
+        cv2.imwrite(str(output_path), blurred)
         return True
+
+    # Use the first (largest) detection
+    bx, by, bw, bh = boxes[0]
+
+    # Expand bounding box by 50% to cover the full head area
+    cx = bx + bw / 2
+    cy = by + bh / 2
+    bw *= 1.5
+    bh *= 1.5
+
+    x1 = max(0, int(cx - bw / 2))
+    y1 = max(0, int(cy - bh / 2))
+    x2 = min(w, int(cx + bw / 2))
+    y2 = min(h, int(cy + bh / 2))
+
+    # Apply heavy Gaussian blur to the face region
+    face_region = img[y1:y2, x1:x2]
+    kernel_size = max(99, (min(x2 - x1, y2 - y1) // 2) * 2 + 1)
+    blurred_face = cv2.GaussianBlur(face_region, (kernel_size, kernel_size), 50)
+
+    # Create an elliptical mask for smooth blending
+    mask = np.zeros((y2 - y1, x2 - x1), dtype=np.float32)
+    center = ((x2 - x1) // 2, (y2 - y1) // 2)
+    axes = ((x2 - x1) // 2, (y2 - y1) // 2)
+    cv2.ellipse(mask, center, axes, 0, 0, 360, 1.0, -1)
+    mask = cv2.GaussianBlur(mask, (31, 31), 10)
+    mask = mask[:, :, np.newaxis]
+
+    # Blend blurred face with original
+    blended = (blurred_face * mask + face_region * (1 - mask)).astype(np.uint8)
+    result = img.copy()
+    result[y1:y2, x1:x2] = blended
+
+    cv2.imwrite(str(output_path), result)
+    return True
 
 
 def inpaint_face(image_path: Path, output_path: Path) -> bool:
@@ -197,7 +243,6 @@ def inpaint_face(image_path: Path, output_path: Path) -> bool:
     """
     try:
         import cv2
-        import mediapipe as mp
         import numpy as np
         import torch
         from diffusers import StableDiffusionInpaintPipeline
@@ -213,36 +258,30 @@ def inpaint_face(image_path: Path, output_path: Path) -> bool:
         return False
 
     h, w = img_cv.shape[:2]
+    boxes = _detect_faces(image_path)
 
-    # Detect face
-    mp_face = mp.solutions.face_detection
-    with mp_face.FaceDetection(model_selection=1, min_detection_confidence=0.5) as detector:
-        rgb = cv2.cvtColor(img_cv, cv2.COLOR_BGR2RGB)
-        results = detector.process(rgb)
+    if not boxes:
+        print(f"  WARNING: No face detected in {image_path.name}, falling back to blur.")
+        return blur_face(image_path, output_path)
 
-        if not results.detections:
-            print(f"  WARNING: No face detected in {image_path.name}, falling back to blur.")
-            return blur_face(image_path, output_path)
+    bx, by, bw, bh = boxes[0]
 
-        detection = results.detections[0]
-        bbox = detection.location_data.relative_bounding_box
+    # Create mask for the face region (expanded)
+    cx = bx + bw / 2
+    cy = by + bh / 2
+    bw *= 1.6
+    bh *= 1.6
 
-        # Create mask for the face region (expanded)
-        cx = bbox.xmin + bbox.width / 2
-        cy = bbox.ymin + bbox.height / 2
-        bw = bbox.width * 1.6
-        bh = bbox.height * 1.6
+    x1 = max(0, int(cx - bw / 2))
+    y1 = max(0, int(cy - bh / 2))
+    x2 = min(w, int(cx + bw / 2))
+    y2 = min(h, int(cy + bh / 2))
 
-        x1 = max(0, int((cx - bw / 2) * w))
-        y1 = max(0, int((cy - bh / 2) * h))
-        x2 = min(w, int((cx + bw / 2) * w))
-        y2 = min(h, int((cy + bh / 2) * h))
-
-        mask = np.zeros((h, w), dtype=np.uint8)
-        center = ((x1 + x2) // 2, (y1 + y2) // 2)
-        axes = ((x2 - x1) // 2, (y2 - y1) // 2)
-        cv2.ellipse(mask, center, axes, 0, 0, 360, 255, -1)
-        mask = cv2.GaussianBlur(mask, (21, 21), 10)
+    mask = np.zeros((h, w), dtype=np.uint8)
+    center = ((x1 + x2) // 2, (y1 + y2) // 2)
+    axes = ((x2 - x1) // 2, (y2 - y1) // 2)
+    cv2.ellipse(mask, center, axes, 0, 0, 360, 255, -1)
+    mask = cv2.GaussianBlur(mask, (21, 21), 10)
 
     # Run inpainting
     pil_image = Image.open(image_path).convert("RGB")
