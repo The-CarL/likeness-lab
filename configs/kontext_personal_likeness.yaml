@@ -92,8 +92,8 @@ config:
         height: 1024
         prompts:
           # Replace /path/to/control_image.jpg with an actual control image from your dataset
-          - "Replace this person with CARLOP --ctrl_img /home/ubuntu/likeness-lab/datasets/kontext_pairs/control/001.jpg"
-          - "Make this person look like CARLOP --ctrl_img /home/ubuntu/likeness-lab/datasets/kontext_pairs/control/001.jpg"
+          - "Replace this person with CARLOP --ctrl_img /home/ubuntu/likeness-lab/datasets/kontext_pairs/control/001.jpeg"
+          - "Make this person look like CARLOP --ctrl_img /home/ubuntu/likeness-lab/datasets/kontext_pairs/control/001.jpeg"
           - "Turn this into a photo of CARLOP smiling --ctrl_img /home/ubuntu/likeness-lab/datasets/kontext_pairs/control/002.jpg"
           - "Replace the person with CARLOP in a professional headshot --ctrl_img /home/ubuntu/likeness-lab/datasets/kontext_pairs/control/002.jpg"
         neg: ""                    # Negative prompts are not used with Flux
