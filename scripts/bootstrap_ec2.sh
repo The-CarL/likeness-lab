@@ -84,6 +84,10 @@ fi
 info "Installing ai-toolkit dependencies..."
 pip install -r requirements.txt
 
+# ── 4b. Apply patches for 24 GB GPU compatibility ────────────────────
+info "Applying ai-toolkit patches for 24 GB GPU..."
+bash "$PROJECT_DIR/scripts/patch_aitoolkit.sh"
+
 # ── 5. Create project directory structure ────────────────────────────
 info "Creating project directories..."
 mkdir -p "$PROJECT_DIR"/{datasets/{raw_photos,kontext_pairs/{target,control},standard},outputs,logs}
