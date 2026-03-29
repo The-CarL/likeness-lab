@@ -1,0 +1,106 @@
+# ============================================================================
+# Flux Kontext Dev — Personal Likeness LoRA Config
+# ============================================================================
+# Tuned for a g5.xlarge (1x NVIDIA A10G, 24 GB VRAM).
+# Based on ai-toolkit's train_lora_flux_kontext_24gb.yaml example.
+#
+# Dataset layout expected:
+#   datasets/kontext_pairs/target/   — your real photos + .txt captions
+#   datasets/kontext_pairs/control/  — "before" images (same filenames, no captions)
+#
+# Run with:  python run.py configs/kontext_personal_likeness.yaml
+# ============================================================================
+---
+job: extension
+config:
+  name: "carlop_kontext_lora_v1"
+  process:
+    - type: "sd_trainer"
+
+      # Where checkpoints, samples, and logs are saved
+      training_folder: "outputs"
+
+      device: cuda:0
+
+      # Trigger word — gets prepended to captions that don't already contain it.
+      # You can also use [trigger] in captions and it will be replaced.
+      trigger_word: "CARLOP"
+
+      # ── LoRA network settings ──────────────────────────────────────
+      network:
+        type: "lora"
+        # Rank 16 is a good balance of quality vs file size for likeness.
+        # Increase to 32 if fine details (freckles, scars) aren't captured.
+        # Decrease to 8 for a smaller file if quality is acceptable.
+        linear: 16
+        linear_alpha: 16          # Keep equal to linear for stable training
+
+      # ── Checkpoint saving ──────────────────────────────────────────
+      save:
+        dtype: float16            # Precision for the saved .safetensors
+        save_every: 500           # Save a checkpoint every N steps
+        max_step_saves_to_keep: 3 # Keep only the last 3 intermediate saves
+        push_to_hub: false
+
+      # ── Dataset ────────────────────────────────────────────────────
+      datasets:
+        - folder_path: "datasets/kontext_pairs/target"
+          # control_path holds the "before" images. Filenames must match
+          # the target folder (extension can differ). No captions needed here.
+          control_path: "datasets/kontext_pairs/control"
+          caption_ext: "txt"
+          caption_dropout_rate: 0.05   # Drop captions 5% of the time for robustness
+          shuffle_tokens: false
+          cache_latents_to_disk: true  # Cache VAE latents — saves VRAM, speeds up
+          # Kontext uses 2x latent size, so 1024 will OOM on 24 GB.
+          # 512+768 gives good quality within VRAM limits.
+          resolution: [512, 768]
+
+      # ── Training hyperparameters ───────────────────────────────────
+      train:
+        batch_size: 1              # 1 is the max that fits on 24 GB with Kontext
+        steps: 1500                # 1500 steps for ~25 images ≈ 60 epochs; good starting point
+                                   # If underfitting (generic face), increase to 2000-2500
+                                   # If overfitting (copies training images), reduce to 800-1000
+        gradient_accumulation_steps: 1
+        train_unet: true
+        train_text_encoder: false  # Flux text encoder training is not supported
+        gradient_checkpointing: true  # Required to fit in 24 GB VRAM
+        noise_scheduler: "flowmatch"
+        optimizer: "adamw8bit"     # 8-bit Adam keeps memory usage low
+        lr: 1e-4                   # 1e-4 is the sweet spot for Flux LoRA
+                                   # If training is unstable, try 5e-5
+                                   # If learning too slowly, try 2e-4
+        timestep_type: "weighted"  # Recommended for Kontext training
+        dtype: bf16                # BF16 mixed precision — required for Flux on A10G
+
+      # ── Base model ─────────────────────────────────────────────────
+      model:
+        # Gated model — accept terms at https://huggingface.co/black-forest-labs/FLUX.1-Kontext-dev
+        name_or_path: "black-forest-labs/FLUX.1-Kontext-dev"
+        arch: "flux_kontext"       # MUST be flux_kontext, not is_flux
+        quantize: true             # 8-bit mixed precision to fit in 24 GB
+
+      # ── Sampling during training ───────────────────────────────────
+      # Generates sample images every N steps so you can monitor quality.
+      # Update the --ctrl_img paths after preparing your dataset.
+      sample:
+        sampler: "flowmatch"
+        sample_every: 500
+        width: 1024
+        height: 1024
+        prompts:
+          # Replace /path/to/control_image.jpg with an actual control image from your dataset
+          - "Replace this person with CARLOP --ctrl_img datasets/kontext_pairs/control/001.jpg"
+          - "Make this person look like CARLOP --ctrl_img datasets/kontext_pairs/control/001.jpg"
+          - "Turn this into a photo of CARLOP smiling --ctrl_img datasets/kontext_pairs/control/002.jpg"
+          - "Replace the person with CARLOP in a professional headshot --ctrl_img datasets/kontext_pairs/control/002.jpg"
+        neg: ""                    # Negative prompts are not used with Flux
+        seed: 42
+        walk_seed: true            # Increment seed per sample for variety
+        guidance_scale: 4
+        sample_steps: 20
+
+meta:
+  name: "[name]"
+  version: "1.0"

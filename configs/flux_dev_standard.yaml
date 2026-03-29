@@ -1,0 +1,91 @@
+# ============================================================================
+# Flux Dev — Standard LoRA Config (Non-Kontext Fallback)
+# ============================================================================
+# Use this if Kontext training doesn't work for your use case, or if you want
+# a traditional text-to-image LoRA instead of an edit/instruction LoRA.
+#
+# Tuned for a g5.xlarge (1x NVIDIA A10G, 24 GB VRAM).
+#
+# Dataset layout expected:
+#   datasets/standard/   — your photos + matching .txt caption files
+#
+# Run with:  python run.py configs/flux_dev_standard.yaml
+# ============================================================================
+---
+job: extension
+config:
+  name: "carlop_standard_lora_v1"
+  process:
+    - type: "sd_trainer"
+
+      training_folder: "outputs"
+      device: cuda:0
+
+      trigger_word: "CARLOP"
+
+      # ── LoRA network settings ──────────────────────────────────────
+      network:
+        type: "lora"
+        linear: 16                 # Rank 16 — same rationale as Kontext config
+        linear_alpha: 16
+
+      # ── Checkpoint saving ──────────────────────────────────────────
+      save:
+        dtype: float16
+        save_every: 500
+        max_step_saves_to_keep: 4
+        push_to_hub: false
+
+      # ── Dataset ────────────────────────────────────────────────────
+      datasets:
+        - folder_path: "datasets/standard"
+          caption_ext: "txt"
+          caption_dropout_rate: 0.05
+          shuffle_tokens: false
+          cache_latents_to_disk: true
+          # Standard Flux Dev can handle 1024 since there's no 2x latent overhead
+          resolution: [512, 768, 1024]
+
+      # ── Training hyperparameters ───────────────────────────────────
+      train:
+        batch_size: 1
+        steps: 2000                # Standard LoRA benefits from more steps
+        gradient_accumulation_steps: 1
+        train_unet: true
+        train_text_encoder: false
+        gradient_checkpointing: true
+        noise_scheduler: "flowmatch"
+        optimizer: "adamw8bit"
+        lr: 1e-4
+        dtype: bf16
+        # EMA smooths out learning — good for standard LoRA
+        ema_config:
+          use_ema: true
+          ema_decay: 0.99
+
+      # ── Base model ─────────────────────────────────────────────────
+      model:
+        name_or_path: "black-forest-labs/FLUX.1-dev"
+        is_flux: true              # Standard Flux uses is_flux, NOT arch
+        quantize: true
+
+      # ── Sampling during training ───────────────────────────────────
+      sample:
+        sampler: "flowmatch"
+        sample_every: 500
+        width: 1024
+        height: 1024
+        prompts:
+          - "a photo of CARLOP, professional headshot, studio lighting"
+          - "CARLOP walking through a busy city street, candid photo"
+          - "portrait of CARLOP at the beach, golden hour lighting"
+          - "CARLOP sitting in a coffee shop, reading a book"
+        neg: ""
+        seed: 42
+        walk_seed: true
+        guidance_scale: 4
+        sample_steps: 20
+
+meta:
+  name: "[name]"
+  version: "1.0"
