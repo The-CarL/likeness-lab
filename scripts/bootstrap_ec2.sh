@@ -49,26 +49,22 @@ fi
 info "Updating system packages..."
 sudo apt-get update -qq && sudo apt-get upgrade -y -qq
 
-# ── 3. Activate PyTorch conda environment ────────────────────────────
+# ── 3. Activate PyTorch environment ──────────────────────────────────
 info "Activating PyTorch environment..."
-# DLAMI provides conda with a pytorch environment
-if [ -f "$HOME/anaconda3/etc/profile.d/conda.sh" ]; then
+# Newer DLAMIs use a virtualenv at /opt/pytorch; older ones use conda.
+if [ -f "/opt/pytorch/bin/activate" ]; then
+    source /opt/pytorch/bin/activate
+    info "Activated /opt/pytorch virtualenv."
+elif [ -f "$HOME/anaconda3/etc/profile.d/conda.sh" ]; then
     source "$HOME/anaconda3/etc/profile.d/conda.sh"
+    conda activate pytorch 2>/dev/null || conda activate pytorch_p310 2>/dev/null || conda activate base
+    info "Activated conda environment."
 elif [ -f "/opt/conda/etc/profile.d/conda.sh" ]; then
     source "/opt/conda/etc/profile.d/conda.sh"
+    conda activate pytorch 2>/dev/null || conda activate base
+    info "Activated conda environment."
 else
-    error "Could not find conda installation. Is this a PyTorch DLAMI?"
-fi
-
-# Try common conda env names used by DLAMI
-if conda activate pytorch 2>/dev/null; then
-    info "Activated 'pytorch' conda environment."
-elif conda activate pytorch_p310 2>/dev/null; then
-    info "Activated 'pytorch_p310' conda environment."
-elif conda activate base 2>/dev/null; then
-    warn "Could not find 'pytorch' env, using 'base'. You may need to install PyTorch."
-else
-    error "Failed to activate any conda environment."
+    error "Could not find PyTorch environment. Is this a PyTorch DLAMI?"
 fi
 
 python -c "import torch; print(f'PyTorch {torch.__version__}, CUDA available: {torch.cuda.is_available()}')"

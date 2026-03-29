@@ -41,13 +41,16 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# ── Activate conda ──────────────────────────────────────────────────
-if [ -f "$HOME/anaconda3/etc/profile.d/conda.sh" ]; then
+# ── Activate PyTorch environment ─────────────────────────────────────
+if [ -f "/opt/pytorch/bin/activate" ]; then
+    source /opt/pytorch/bin/activate
+elif [ -f "$HOME/anaconda3/etc/profile.d/conda.sh" ]; then
     source "$HOME/anaconda3/etc/profile.d/conda.sh"
+    conda activate pytorch 2>/dev/null || conda activate base
 elif [ -f "/opt/conda/etc/profile.d/conda.sh" ]; then
     source "/opt/conda/etc/profile.d/conda.sh"
+    conda activate pytorch 2>/dev/null || conda activate base
 fi
-conda activate pytorch 2>/dev/null || conda activate pytorch_p310 2>/dev/null || conda activate base
 
 # ── Start-only mode ─────────────────────────────────────────────────
 if [ "$START_ONLY" = true ]; then
