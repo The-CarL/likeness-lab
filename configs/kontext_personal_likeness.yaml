@@ -80,6 +80,7 @@ config:
         name_or_path: "black-forest-labs/FLUX.1-Kontext-dev"
         arch: "flux_kontext"       # MUST be flux_kontext, not is_flux
         quantize: true             # 8-bit mixed precision to fit in 24 GB
+        low_vram: true             # Quantize layer-by-layer to avoid OOM during model load
 
       # ── Sampling during training ───────────────────────────────────
       # Generates sample images every N steps so you can monitor quality.
