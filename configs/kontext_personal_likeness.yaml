@@ -6,7 +6,7 @@
 #
 # Dataset layout expected:
 #   datasets/kontext_pairs/target/   — your real photos + .txt captions
-#   datasets/kontext_pairs/control/  — "before" images (same filenames, no captions)
+#   /home/ubuntu/likeness-lab/datasets/kontext_pairs/control/  — "before" images (same filenames, no captions)
 #
 # Run with:  python run.py configs/kontext_personal_likeness.yaml
 # ============================================================================
@@ -18,7 +18,7 @@ config:
     - type: "sd_trainer"
 
       # Where checkpoints, samples, and logs are saved
-      training_folder: "outputs"
+      training_folder: "/home/ubuntu/likeness-lab/outputs"
 
       device: cuda:0
 
@@ -44,10 +44,10 @@ config:
 
       # ── Dataset ────────────────────────────────────────────────────
       datasets:
-        - folder_path: "datasets/kontext_pairs/target"
+        - folder_path: "/home/ubuntu/likeness-lab/datasets/kontext_pairs/target"
           # control_path holds the "before" images. Filenames must match
           # the target folder (extension can differ). No captions needed here.
-          control_path: "datasets/kontext_pairs/control"
+          control_path: "/home/ubuntu/likeness-lab/datasets/kontext_pairs/control"
           caption_ext: "txt"
           caption_dropout_rate: 0.05   # Drop captions 5% of the time for robustness
           shuffle_tokens: false
@@ -92,10 +92,10 @@ config:
         height: 1024
         prompts:
           # Replace /path/to/control_image.jpg with an actual control image from your dataset
-          - "Replace this person with CARLOP --ctrl_img datasets/kontext_pairs/control/001.jpg"
-          - "Make this person look like CARLOP --ctrl_img datasets/kontext_pairs/control/001.jpg"
-          - "Turn this into a photo of CARLOP smiling --ctrl_img datasets/kontext_pairs/control/002.jpg"
-          - "Replace the person with CARLOP in a professional headshot --ctrl_img datasets/kontext_pairs/control/002.jpg"
+          - "Replace this person with CARLOP --ctrl_img /home/ubuntu/likeness-lab/datasets/kontext_pairs/control/001.jpg"
+          - "Make this person look like CARLOP --ctrl_img /home/ubuntu/likeness-lab/datasets/kontext_pairs/control/001.jpg"
+          - "Turn this into a photo of CARLOP smiling --ctrl_img /home/ubuntu/likeness-lab/datasets/kontext_pairs/control/002.jpg"
+          - "Replace the person with CARLOP in a professional headshot --ctrl_img /home/ubuntu/likeness-lab/datasets/kontext_pairs/control/002.jpg"
         neg: ""                    # Negative prompts are not used with Flux
         seed: 42
         walk_seed: true            # Increment seed per sample for variety
