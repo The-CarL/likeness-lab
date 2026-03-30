@@ -1,20 +1,22 @@
 # ============================================================================
-# Flux Dev — Standard LoRA Config (Non-Kontext Fallback)
+# Flux Dev — Standard LoRA Config
 # ============================================================================
-# Use this if Kontext training doesn't work for your use case, or if you want
-# a traditional text-to-image LoRA instead of an edit/instruction LoRA.
-#
 # Tuned for a g5.xlarge (1x NVIDIA A10G, 24 GB VRAM).
+# Parameters based on 2026 best practices for Flux LoRA likeness training.
 #
-# Dataset layout expected:
-#   datasets/standard/   — your photos + matching .txt caption files
+# Key changes from v1/v2:
+#   - LR 4e-4 (Flux needs higher LR than SDXL — 1e-4 catastrophically undertrains)
+#   - Rank 32 (more capacity for facial detail)
+#   - 1500 steps (Flux overfits past 1500-2000)
+#   - Batch size 2 + grad accum 2 = effective batch 4 (stabilizes training)
+#   - EMA disabled (not recommended for Flux)
 #
 # Run with:  python run.py configs/flux_dev_standard.yaml
 # ============================================================================
 ---
 job: extension
 config:
-  name: "carlop_standard_lora_v2"
+  name: "carlop_standard_lora_v3"
   process:
     - type: "sd_trainer"
 
@@ -26,14 +28,14 @@ config:
       # ── LoRA network settings ──────────────────────────────────────
       network:
         type: "lora"
-        linear: 16                 # Rank 16 — same rationale as Kontext config
-        linear_alpha: 16
+        linear: 32                 # Rank 32 — more capacity for facial detail
+        linear_alpha: 32
 
       # ── Checkpoint saving ──────────────────────────────────────────
       save:
         dtype: float16
         save_every: 500
-        max_step_saves_to_keep: 4
+        max_step_saves_to_keep: 3
         push_to_hub: false
 
       # ── Dataset ────────────────────────────────────────────────────
@@ -43,32 +45,27 @@ config:
           caption_dropout_rate: 0.05
           shuffle_tokens: false
           cache_latents_to_disk: true
-          # Standard Flux Dev can handle 1024 since there's no 2x latent overhead
           resolution: [512, 768, 1024]
 
       # ── Training hyperparameters ───────────────────────────────────
       train:
-        batch_size: 1
-        steps: 2000                # Standard LoRA benefits from more steps
-        gradient_accumulation_steps: 1
+        batch_size: 2              # Larger batch for stable gradients
+        steps: 1500                # Flux overfits past 1500-2000
+        gradient_accumulation_steps: 2  # Effective batch size = 4
         train_unet: true
         train_text_encoder: false
         gradient_checkpointing: true
         noise_scheduler: "flowmatch"
         optimizer: "adamw8bit"
-        lr: 1e-4
+        lr: 4e-4                   # Flux needs higher LR than SDXL
         dtype: bf16
-        # EMA smooths out learning — good for standard LoRA
-        ema_config:
-          use_ema: true
-          ema_decay: 0.99
 
       # ── Base model ─────────────────────────────────────────────────
       model:
         name_or_path: "black-forest-labs/FLUX.1-dev"
-        is_flux: true              # Standard Flux uses is_flux, NOT arch
+        is_flux: true
         quantize: true
-        low_vram: true             # Load/quantize on CPU to avoid OOM on 24 GB GPUs
+        low_vram: true
 
       # ── Sampling during training ───────────────────────────────────
       sample:
@@ -77,10 +74,10 @@ config:
         width: 1024
         height: 1024
         prompts:
-          - "a photo of CARLOP, professional headshot, studio lighting"
-          - "CARLOP walking through a busy city street, candid photo"
-          - "portrait of CARLOP at the beach, golden hour lighting"
-          - "CARLOP sitting in a coffee shop, reading a book"
+          - "a professional headshot photo of CARLOP, young man with short brown hair, clean shaven smooth skin, studio lighting"
+          - "portrait of CARLOP, young man, smooth clean shaven face, walking through a city, golden hour"
+          - "CARLOP, young man with short hair, clean shaven, sitting in a coffee shop, warm lighting"
+          - "digital art portrait of CARLOP, young man, smooth skin, neon lighting, cyberpunk style"
         neg: ""
         seed: 42
         walk_seed: true
