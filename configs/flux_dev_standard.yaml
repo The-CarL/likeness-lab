@@ -14,7 +14,7 @@
 ---
 job: extension
 config:
-  name: "carlop_standard_lora_v1"
+  name: "carlop_standard_lora_v2"
   process:
     - type: "sd_trainer"
 
@@ -38,7 +38,7 @@ config:
 
       # ── Dataset ────────────────────────────────────────────────────
       datasets:
-        - folder_path: "/home/ubuntu/likeness-lab/datasets/standard"
+        - folder_path: "/home/ubuntu/likeness-lab/datasets/standard_v2"
           caption_ext: "txt"
           caption_dropout_rate: 0.05
           shuffle_tokens: false
