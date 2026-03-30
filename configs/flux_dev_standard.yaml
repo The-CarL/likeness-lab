@@ -18,7 +18,7 @@ config:
   process:
     - type: "sd_trainer"
 
-      training_folder: "outputs"
+      training_folder: "/home/ubuntu/likeness-lab/outputs"
       device: cuda:0
 
       trigger_word: "CARLOP"
@@ -38,7 +38,7 @@ config:
 
       # ── Dataset ────────────────────────────────────────────────────
       datasets:
-        - folder_path: "datasets/standard"
+        - folder_path: "/home/ubuntu/likeness-lab/datasets/standard"
           caption_ext: "txt"
           caption_dropout_rate: 0.05
           shuffle_tokens: false
@@ -68,6 +68,7 @@ config:
         name_or_path: "black-forest-labs/FLUX.1-dev"
         is_flux: true              # Standard Flux uses is_flux, NOT arch
         quantize: true
+        low_vram: true             # Load/quantize on CPU to avoid OOM on 24 GB GPUs
 
       # ── Sampling during training ───────────────────────────────────
       sample:
