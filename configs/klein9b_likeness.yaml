@@ -72,9 +72,7 @@ config:
         name_or_path: "black-forest-labs/FLUX.2-klein-base-9B"
         is_flux: true
         quantize: true
-        qtype: "qfloat8"
         quantize_te: true          # Also quantize the Qwen3 text encoder
-        low_vram: true
 
       # ── Sampling during training ───────────────────────────────────
       sample:
