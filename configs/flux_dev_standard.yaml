@@ -49,9 +49,9 @@ config:
 
       # ── Training hyperparameters ───────────────────────────────────
       train:
-        batch_size: 2              # Larger batch for stable gradients
+        batch_size: 1              # Max that fits on 24 GB with rank 32
         steps: 1500                # Flux overfits past 1500-2000
-        gradient_accumulation_steps: 2  # Effective batch size = 4
+        gradient_accumulation_steps: 4  # Effective batch size = 4
         train_unet: true
         train_text_encoder: false
         gradient_checkpointing: true
