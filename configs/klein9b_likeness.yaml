@@ -1,0 +1,98 @@
+# ============================================================================
+# Flux 2 Klein 9B — Personal Likeness LoRA Config
+# ============================================================================
+# Tuned for g5.xlarge (1x NVIDIA A10G, 24 GB VRAM).
+# Based on community-validated high-likeness configs (RunComfy, CivitAI).
+#
+# Key principles:
+#   - Captions describe everything EXCEPT the person's appearance
+#   - Trigger word is a non-dictionary token (ohwx_person)
+#   - Target ~100 repeats per image for strong identity lock
+#   - sigmoid timestep for character identity
+#   - EMA enabled for smooth likeness learning
+#   - Klein Base needs 50 sample steps (not distilled)
+#
+# Run with:  python run.py configs/klein9b_likeness.yaml
+# ============================================================================
+---
+job: extension
+config:
+  name: "carlop_klein9b_v1"
+  process:
+    - type: "sd_trainer"
+
+      training_folder: "/home/ubuntu/likeness-lab/outputs"
+      device: cuda:0
+
+      trigger_word: "ohwx_person"
+
+      # ── LoRA network settings ──────────────────────────────────────
+      network:
+        type: "lora"
+        linear: 32
+        linear_alpha: 32
+
+      # ── Checkpoint saving ──────────────────────────────────────────
+      save:
+        dtype: float16
+        save_every: 500
+        max_step_saves_to_keep: 4
+        push_to_hub: false
+
+      # ── Dataset ────────────────────────────────────────────────────
+      datasets:
+        - folder_path: "/home/ubuntu/likeness-lab/datasets/standard_v2"
+          caption_ext: "txt"
+          caption_dropout_rate: 0.05
+          shuffle_tokens: false
+          cache_latents_to_disk: true
+          resolution: [768]        # Single bucket to save VRAM on 24 GB
+
+      # ── Training hyperparameters ───────────────────────────────────
+      train:
+        batch_size: 1
+        steps: 2500                # ~100 repeats for 23 images
+        gradient_accumulation_steps: 1
+        train_unet: true
+        train_text_encoder: false
+        gradient_checkpointing: true
+        noise_scheduler: "flowmatch"
+        timestep_type: "sigmoid"   # Better for character identity than weighted
+        optimizer: "adamw8bit"
+        lr: 1e-4
+        optimizer_params:
+          weight_decay: 1e-5
+        ema_config:
+          use_ema: true
+          ema_decay: 0.99
+        dtype: bf16
+
+      # ── Base model ─────────────────────────────────────────────────
+      model:
+        name_or_path: "black-forest-labs/FLUX.2-klein-base-9B"
+        is_flux: true
+        quantize: true
+        qtype: "qfloat8"
+        quantize_te: true          # Also quantize the Qwen3 text encoder
+        low_vram: true
+
+      # ── Sampling during training ───────────────────────────────────
+      sample:
+        sampler: "flowmatch"
+        sample_every: 500
+        width: 1024
+        height: 1024
+        prompts:
+          - "photo of ohwx_person, outdoor park, sunny afternoon, medium shot, natural light"
+          - "photo of ohwx_person, coffee shop interior, warm ambient lighting, close-up portrait"
+          - "photo of ohwx_person, professional studio, clean grey backdrop, editorial lighting"
+          - "photo of ohwx_person, city street at golden hour, shallow depth of field, candid"
+        neg: ""
+        seed: 42
+        walk_seed: true
+        guidance_scale: 4
+        sample_steps: 50           # Klein Base needs ~50 steps (not distilled)
+
+meta:
+  name: "[name]"
+  version: "1.0"
