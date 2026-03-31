@@ -70,7 +70,7 @@ config:
       # ── Base model ─────────────────────────────────────────────────
       model:
         name_or_path: "black-forest-labs/FLUX.2-klein-base-9B"
-        is_flux: true
+        arch: "flux2_klein_9b"     # Uses dedicated Klein 9B loader, NOT is_flux
         quantize: true
         quantize_te: true          # Also quantize the Qwen3 text encoder
 
