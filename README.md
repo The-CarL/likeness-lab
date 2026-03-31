@@ -1,71 +1,81 @@
-# Personal Likeness LoRA Training (Flux Kontext Dev)
+# Personal Likeness LoRA Training
 
-Train a personal likeness LoRA using [Flux Kontext Dev](https://huggingface.co/black-forest-labs/FLUX.1-Kontext-dev) on AWS EC2. Go from a folder of selfies to a `.safetensors` file that can insert you into any scene from a reference photo, with local ComfyUI validation via SSH tunnel.
+Train a personal likeness LoRA on AWS EC2. Go from a folder of selfies to a `.safetensors` file that generates you in any style or scene.
 
-This repo uses **Kontext-style training** — paired before/after images with instructional captions — so the resulting LoRA works with Flux Kontext's edit-by-instruction paradigm. A standard Flux Dev LoRA config is included as a fallback.
+## Supported Models
+
+| Model | Config | VRAM | Best For |
+|-------|--------|------|----------|
+| **Flux 2 Klein 9B** | `klein9b_likeness.yaml` | 24 GB (A10G) | Recommended — best quality/cost ratio |
+| Flux 1 [dev] | `flux_dev_standard.yaml` | 24 GB (A10G) | Legacy fallback |
+| Flux Kontext Dev | `kontext_personal_likeness.yaml` | 24 GB (A10G) | Edit-based (requires input image) |
 
 ## Prerequisites
 
-- **AWS account** with permissions to launch EC2 instances (g5.xlarge)
-- **HuggingFace account** with access to [FLUX.1-Kontext-dev](https://huggingface.co/black-forest-labs/FLUX.1-Kontext-dev) (accept the gated model license)
-- **20-30 personal photos** — varied angles, lighting, expressions, backgrounds
+- **AWS account** with a g5.xlarge instance (24 GB A10G GPU)
+- **HuggingFace account** with access to gated model (accept license)
+- **15-25 personal photos** — varied angles, lighting, expressions. Clean-shaven if that's the look you want. The model learns whatever is consistent across your photos.
 - **SSH key pair** configured in AWS
-- **Local machine** with ComfyUI installed (for final validation)
 
 ## Quick Start
 
-See [docs/RUNBOOK.md](docs/RUNBOOK.md) for the complete step-by-step guide.
+See [docs/RUNBOOK.md](docs/RUNBOOK.md) for the full step-by-step guide.
 
 ```bash
-# 1. Launch a g5.xlarge EC2 instance (see RUNBOOK for the full command)
-# 2. SSH in and bootstrap
-ssh ubuntu@<ec2-ip>
-bash bootstrap_ec2.sh
+# 1. Launch EC2 and SSH in (see RUNBOOK for instance launch command)
+ssh -i ~/.ssh/your-key.pem ubuntu@<ec2-ip>
 
-# 3. Upload your photos from local
-scp -r datasets/raw_photos/* ubuntu@<ec2-ip>:~/likeness-lab/datasets/raw_photos/
+# 2. Bootstrap
+git clone https://github.com/The-CarL/likeness-lab.git ~/likeness-lab
+cd ~/likeness-lab && bash scripts/bootstrap_ec2.sh
 
-# 4. Prepare dataset, caption, and train
-python scripts/prepare_kontext_pairs.py
-python scripts/caption_dataset.py --mode kontext
-bash scripts/launch_training.sh
+# 3. Upload photos from local
+scp -r datasets/raw_photos/* ubuntu@<ec2-ip>:~/likeness-lab/datasets/standard/
 
-# 5. Download the trained LoRA to your Mac
+# 4. Caption and train
+python scripts/caption_dataset.py --mode standard
+bash scripts/launch_training.sh --config klein9b_likeness.yaml
+
+# 5. Generate images
+python scripts/inference.py --prompt "photo of ohwx_person at the beach, sunset"
+
+# 6. Download weights to local
 bash scripts/download_weights.sh <ec2-ip>
 ```
 
+## Key Lessons Learned
+
+- **Captions should describe the scene, NOT the person.** The LoRA learns appearance as the unspoken constant across images.
+- **Use a non-dictionary trigger word** like `ohwx_person`, not a real name.
+- **Flux needs higher LR than SDXL** — 1e-4 minimum, not 1e-5.
+- **24 GB GPUs need quantization** — the `patch_aitoolkit.sh` script handles this for Flux 1 models. Klein 9B handles it natively.
+
 ## Cost Estimate
 
-A full training run (1500 steps) on a g5.xlarge typically takes 1-3 hours, costing **$1-3** at on-demand pricing ($1.006/hr). Add ~$1 for setup/validation time. Total: **$2-5 per run**.
+A full training run on g5.xlarge ($1.006/hr): **$3-5** including setup and inference.
 
 ## Repo Structure
 
 ```
 likeness-lab/
-├── README.md                              # This file
 ├── configs/
-│   ├── kontext_personal_likeness.yaml     # Kontext LoRA training config (primary)
-│   └── flux_dev_standard.yaml             # Standard Flux Dev LoRA config (fallback)
+│   ├── klein9b_likeness.yaml              # Flux 2 Klein 9B (recommended)
+│   ├── flux_dev_standard.yaml             # Flux 1 Dev standard LoRA
+│   └── kontext_personal_likeness.yaml     # Flux Kontext (edit-based)
 ├── scripts/
-│   ├── bootstrap_ec2.sh                   # Full EC2 setup from fresh DLAMI
-│   ├── prepare_kontext_pairs.py           # Generate before/after pairs for Kontext
-│   ├── caption_dataset.py                 # Auto-caption dataset with trigger word
-│   ├── launch_training.sh                 # Start training with the right config
-│   ├── setup_comfyui.sh                   # Install ComfyUI on EC2 for validation
-│   └── download_weights.sh               # Pull trained weights to local machine
-├── workflows/                             # ComfyUI workflow JSONs (add manually)
+│   ├── bootstrap_ec2.sh                   # EC2 setup from fresh DLAMI
+│   ├── patch_aitoolkit.sh                 # Patches for 24 GB GPU compat (Flux 1)
+│   ├── prepare_kontext_pairs.py           # Kontext paired dataset prep
+│   ├── caption_dataset.py                 # Auto-caption with trigger word
+│   ├── launch_training.sh                 # Start training
+│   ├── inference.py                       # Generate images with trained LoRA
+│   ├── setup_comfyui.sh                   # ComfyUI on EC2 for validation
+│   └── download_weights.sh               # Pull weights to local machine
 ├── docs/
 │   └── RUNBOOK.md                         # Step-by-step operational guide
 ├── datasets/                              # (gitignored) Training data
-│   ├── raw_photos/                        # Your original photos
-│   ├── kontext_pairs/{target,control}/    # Prepared paired dataset
-│   └── standard/                          # Standard LoRA dataset
-└── outputs/                               # (gitignored) Trained weights & samples
+└── outputs/                               # (gitignored) Weights & generated images
 ```
-
-## Training Tool
-
-This repo wraps [Ostris AI-Toolkit](https://github.com/ostris/ai-toolkit), the standard open-source tool for training Flux LoRAs. The configs and scripts here handle the setup, dataset prep, and operational workflow around it.
 
 ## License
 
