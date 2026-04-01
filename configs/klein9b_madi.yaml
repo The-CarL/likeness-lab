@@ -1,0 +1,80 @@
+# ============================================================================
+# Flux 2 Klein 9B — Madi Likeness LoRA Config
+# ============================================================================
+# Same proven setup as carlop Klein 9B training.
+# Trigger word: ohwx_woman
+# ============================================================================
+---
+job: extension
+config:
+  name: "madi_klein9b_v1"
+  process:
+    - type: "sd_trainer"
+
+      training_folder: "/home/ubuntu/likeness-lab/outputs"
+      device: cuda:0
+
+      trigger_word: "ohwx_woman"
+
+      network:
+        type: "lora"
+        linear: 32
+        linear_alpha: 32
+
+      save:
+        dtype: float16
+        save_every: 500
+        max_step_saves_to_keep: 4
+        push_to_hub: false
+
+      datasets:
+        - folder_path: "/home/ubuntu/likeness-lab/datasets/madi_v1"
+          caption_ext: "txt"
+          caption_dropout_rate: 0.05
+          shuffle_tokens: false
+          cache_latents_to_disk: true
+          resolution: [768]
+
+      train:
+        batch_size: 1
+        steps: 2800
+        gradient_accumulation_steps: 1
+        train_unet: true
+        train_text_encoder: false
+        gradient_checkpointing: true
+        noise_scheduler: "flowmatch"
+        timestep_type: "sigmoid"
+        optimizer: "adamw8bit"
+        lr: 1e-4
+        optimizer_params:
+          weight_decay: 1e-5
+        ema_config:
+          use_ema: true
+          ema_decay: 0.99
+        dtype: bf16
+
+      model:
+        name_or_path: "black-forest-labs/FLUX.2-klein-base-9B"
+        arch: "flux2_klein_9b"
+        quantize: true
+        quantize_te: true
+
+      sample:
+        sampler: "flowmatch"
+        sample_every: 500
+        width: 1024
+        height: 1024
+        prompts:
+          - "photo of ohwx_woman, outdoor park, sunny afternoon, medium shot, natural light"
+          - "photo of ohwx_woman, coffee shop interior, warm ambient lighting, close-up portrait"
+          - "photo of ohwx_woman, professional studio, clean grey backdrop, editorial lighting"
+          - "photo of ohwx_woman, city street at golden hour, shallow depth of field, candid"
+        neg: ""
+        seed: 42
+        walk_seed: true
+        guidance_scale: 4
+        sample_steps: 50
+
+meta:
+  name: "[name]"
+  version: "1.0"
