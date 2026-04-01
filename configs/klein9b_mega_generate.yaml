@@ -1,0 +1,321 @@
+---
+job: extension
+config:
+  name: "carlop_klein9b_mega"
+  process:
+    - type: 'sd_trainer'
+      training_folder: "/home/ubuntu/likeness-lab/outputs"
+      device: cuda:0
+      trigger_word: "ohwx_person"
+      network:
+        type: "lora"
+        linear: 32
+        linear_alpha: 32
+        pretrained_lora_path: "/home/ubuntu/likeness-lab/outputs/carlop_klein9b_v1/carlop_klein9b_v1.safetensors"
+      save:
+        dtype: float16
+        save_every: 99999
+        max_step_saves_to_keep: 1
+        push_to_hub: false
+      datasets:
+        - folder_path: "/home/ubuntu/likeness-lab/datasets/standard_v2"
+          caption_ext: "txt"
+          caption_dropout_rate: 0.05
+          shuffle_tokens: false
+          cache_latents_to_disk: true
+          resolution: [768]
+      train:
+        batch_size: 1
+        steps: 1
+        gradient_accumulation_steps: 1
+        train_unet: true
+        train_text_encoder: false
+        gradient_checkpointing: true
+        noise_scheduler: "flowmatch"
+        optimizer: "adamw8bit"
+        lr: 1e-10
+        skip_first_sample: true
+        dtype: bf16
+      model:
+        name_or_path: "black-forest-labs/FLUX.2-klein-base-9B"
+        arch: "flux2_klein_9b"
+        quantize: true
+        quantize_te: true
+      sample:
+        sampler: "flowmatch"
+        sample_every: 1
+        width: 1024
+        height: 1024
+        prompts:
+          # ── OIL PAINTING (10) ──────────────────────────────────
+          - "oil painting portrait of ohwx_person, front-facing, subtle grin, Rembrandt lighting, classical style, rich warm tones, canvas texture, museum quality"
+          - "oil painting of ohwx_person, front view, gentle expression, dramatic chiaroscuro, dark background, old master style, golden light"
+          - "classical oil portrait of ohwx_person, facing camera, slight smile, baroque style, velvet draping, warm amber palette"
+          - "oil painting of ohwx_person, front-facing, subtle grin, impressionist style, thick brushstrokes, dappled garden light"
+          - "renaissance oil portrait of ohwx_person, front view, knowing expression, ornate gold frame visible, deep reds and golds"
+          - "oil painting of ohwx_person, facing camera, gentle smile, John Singer Sargent style, loose confident brushwork, elegant"
+          - "classical portrait of ohwx_person in oil, front-facing, subtle expression, sfumato technique, soft edges, Leonardo inspired"
+          - "oil painting of ohwx_person, front view, warm grin, Vermeer lighting, side window light, pearl-like luminosity"
+          - "romantic era oil portrait of ohwx_person, facing camera, slight smile, stormy sky behind, windswept, dramatic"
+          - "oil painting of ohwx_person, front-facing, gentle expression, alla prima technique, vibrant fresh colors, modern classical"
+          # ── WATERCOLOR (10) ────────────────────────────────────
+          - "watercolor portrait of ohwx_person, front-facing, subtle grin, soft washes, delicate, white paper visible, translucent layers"
+          - "watercolor painting of ohwx_person, front view, gentle smile, wet-on-wet technique, soft edges bleeding, pastel tones"
+          - "loose watercolor portrait of ohwx_person, facing camera, slight grin, bold splashes of color, artistic drips"
+          - "watercolor of ohwx_person, front-facing, warm expression, botanical elements framing face, sage green and dusty rose"
+          - "detailed watercolor portrait of ohwx_person, front view, subtle smile, fine brushwork, luminous skin tones"
+          - "watercolor of ohwx_person, facing camera, gentle grin, abstract color wash background, teal and coral"
+          - "Japanese watercolor style portrait of ohwx_person, front-facing, serene expression, minimal brushstrokes, zen aesthetic"
+          - "watercolor of ohwx_person, front view, slight smile, granulation texture, earthy warm palette, atmospheric"
+          - "watercolor portrait of ohwx_person, facing camera, subtle grin, splatter technique, energetic, vibrant accents"
+          - "watercolor of ohwx_person, front-facing, gentle expression, golden hour color palette, dreamy washes, soft"
+          # ── CHARCOAL SKETCH (10) ───────────────────────────────
+          - "charcoal sketch portrait of ohwx_person, front-facing, subtle grin, textured paper, dramatic shadows, high contrast"
+          - "charcoal drawing of ohwx_person, front view, gentle expression, loose gestural strokes, smudged edges, raw"
+          - "detailed charcoal portrait of ohwx_person, facing camera, slight smile, hyper-realistic, paper grain visible"
+          - "charcoal sketch of ohwx_person, front-facing, warm grin, cross-hatching technique, artistic, expressive"
+          - "charcoal on toned paper of ohwx_person, front view, subtle expression, white chalk highlights, moody"
+          - "charcoal portrait of ohwx_person, facing camera, gentle smile, vine charcoal, soft gradients, atmospheric"
+          - "compressed charcoal drawing of ohwx_person, front-facing, slight grin, bold dark strokes, minimal, striking"
+          - "charcoal sketch of ohwx_person, front view, warm expression, blended shadows, lifted highlights, dimensional"
+          - "charcoal portrait of ohwx_person, facing camera, subtle grin, contour drawing style, single continuous line feel"
+          - "charcoal of ohwx_person, front-facing, gentle expression, dramatic spotlight effect, deep blacks, white paper"
+          # ── ART NOUVEAU (10) ───────────────────────────────────
+          - "art nouveau poster of ohwx_person, front-facing, subtle grin, ornate floral borders, Alphonse Mucha style, elegant"
+          - "art nouveau portrait of ohwx_person, front view, gentle smile, sinuous organic lines, muted gold and green palette"
+          - "Mucha style poster of ohwx_person, facing camera, slight grin, circular halo frame, decorative botanical elements"
+          - "art nouveau of ohwx_person, front-facing, warm expression, peacock feather motifs, jewel tones, ornamental"
+          - "art nouveau illustration of ohwx_person, front view, subtle smile, flowing hair-like decorative lines, stained glass colors"
+          - "art nouveau portrait of ohwx_person, facing camera, gentle grin, lily and iris border, soft pastel palette"
+          - "Mucha inspired portrait of ohwx_person, front-facing, slight expression, zodiac circle behind, stars, mystical"
+          - "art nouveau of ohwx_person, front view, subtle grin, rose and thorns frame, deep burgundy and gold"
+          - "art nouveau poster of ohwx_person, facing camera, warm smile, geometric mosaic background, Byzantine influence"
+          - "art nouveau portrait of ohwx_person, front-facing, gentle expression, dragonfly and water motifs, iridescent"
+          # ── VAPORWAVE (10) ──────────────────────────────────────
+          - "vaporwave portrait of ohwx_person, front-facing, subtle grin, pink purple gradients, marble bust aesthetic, retro grid"
+          - "vaporwave of ohwx_person, front view, slight smile, glitched VHS scan lines, palm trees, sunset gradient"
+          - "vaporwave aesthetic portrait of ohwx_person, facing camera, gentle grin, Roman statue overlay, pastel pink cyan"
+          - "vaporwave of ohwx_person, front-facing, warm expression, Japanese text overlay, dolphin and palm motifs, dreamy"
+          - "vaporwave portrait of ohwx_person, front view, subtle smile, Windows 95 aesthetic, chrome text, teal and magenta"
+          - "vaporwave of ohwx_person, facing camera, slight grin, sunset ocean reflection, grid floor, retrowave"
+          - "vaporwave aesthetic of ohwx_person, front-facing, gentle expression, floating geometric shapes, holographic, pastel"
+          - "vaporwave portrait of ohwx_person, front view, subtle grin, CRT monitor glow, nostalgia, soft purple haze"
+          - "vaporwave of ohwx_person, facing camera, warm smile, ancient Greek elements mixed with digital, surreal"
+          - "vaporwave portrait of ohwx_person, front-facing, slight expression, neon flamingo, checkered floor, dreamlike"
+          # ── GLITCH ART (10) ────────────────────────────────────
+          - "glitch art portrait of ohwx_person, front-facing, subtle grin, data corruption effect, vibrant RGB shift"
+          - "glitch portrait of ohwx_person, front view, slight smile, pixel sorting effect, streaked colors, digital"
+          - "glitch art of ohwx_person, facing camera, gentle grin, horizontal scan line displacement, VHS tracking error"
+          - "glitch portrait of ohwx_person, front-facing, warm expression, chromatic aberration, fractured geometry"
+          - "glitch art of ohwx_person, front view, subtle smile, datamoshing effect, melting pixels, vibrant"
+          - "glitch portrait of ohwx_person, facing camera, slight grin, circuit board overlay, matrix rain, digital decay"
+          - "glitch art of ohwx_person, front-facing, gentle expression, channel shift red green blue, dark background"
+          - "glitch portrait of ohwx_person, front view, subtle grin, corrupted JPEG artifacts, beautiful destruction"
+          - "glitch art of ohwx_person, facing camera, warm smile, wave distortion, analog TV static, colorful"
+          - "glitch portrait of ohwx_person, front-facing, slight expression, broken mirror pixel effect, neon accents"
+          # ── ISOMETRIC VOXEL (10) ───────────────────────────────
+          - "isometric 3D voxel portrait of ohwx_person, front-facing, friendly expression, colorful blocks, Minecraft inspired, playful"
+          - "voxel art of ohwx_person, front view, subtle grin, pixel perfect, tiny detailed scene, warm lighting"
+          - "isometric voxel portrait of ohwx_person, facing camera, gentle smile, pastel colored blocks, cute, studio lighting"
+          - "voxel art of ohwx_person, front-facing, warm expression, retro game aesthetic, bright primary colors"
+          - "isometric voxel of ohwx_person, front view, slight grin, sitting at tiny desk with computer, detailed scene"
+          - "voxel portrait of ohwx_person, facing camera, friendly grin, floating island scene, trees and clouds, whimsical"
+          - "isometric voxel art of ohwx_person, front-facing, subtle smile, cyberpunk themed blocks, neon glow"
+          - "voxel portrait of ohwx_person, front view, gentle expression, cozy room scene, warm lamp light, detailed"
+          - "isometric voxel of ohwx_person, facing camera, slight grin, space station scene, stars, sci-fi blocks"
+          - "voxel art portrait of ohwx_person, front-facing, warm smile, Japanese garden scene, cherry blossoms, serene"
+          # ── RISOGRAPH (10) ─────────────────────────────────────
+          - "risograph print portrait of ohwx_person, front-facing, subtle grin, limited color palette, grain texture, offset layers"
+          - "risograph of ohwx_person, front view, gentle smile, two-color print, red and blue, halftone dots, zine aesthetic"
+          - "risograph portrait of ohwx_person, facing camera, slight grin, fluorescent pink and teal, overprint effect"
+          - "risograph of ohwx_person, front-facing, warm expression, soy ink texture, slight misregistration, charming"
+          - "risograph print of ohwx_person, front view, subtle smile, orange and purple duotone, paper texture visible"
+          - "risograph portrait of ohwx_person, facing camera, gentle grin, three-color overlay, retro poster feel"
+          - "risograph of ohwx_person, front-facing, slight expression, spot color yellow and black, bold graphic design"
+          - "risograph print of ohwx_person, front view, warm smile, green and pink layers, editorial illustration style"
+          - "risograph portrait of ohwx_person, facing camera, subtle grin, metallic gold ink on cream paper, luxe"
+          - "risograph of ohwx_person, front-facing, gentle expression, cyan and vermillion, vintage print feel, grainy"
+          # ── FILM NOIR (10) ─────────────────────────────────────
+          - "film noir portrait of ohwx_person, front-facing, subtle grin, black and white, venetian blind shadows, moody"
+          - "noir portrait of ohwx_person, front view, slight smirk, cigarette smoke wisps, high contrast, dramatic"
+          - "film noir of ohwx_person, facing camera, gentle expression, rain-soaked window reflections, chiaroscuro"
+          - "noir style portrait of ohwx_person, front-facing, knowing grin, fedora shadow across eyes, classic detective"
+          - "film noir of ohwx_person, front view, subtle expression, single overhead lamp, deep shadows, mysterious"
+          - "noir portrait of ohwx_person, facing camera, slight smile, wet city street reflections, streetlamp, atmospheric"
+          - "film noir of ohwx_person, front-facing, warm expression, newsroom setting, typewriter, smoke, vintage"
+          - "noir portrait of ohwx_person, front view, subtle grin, car headlight illumination, night, cinematic grain"
+          - "film noir of ohwx_person, facing camera, gentle smirk, silhouette in doorway, backlit, mysterious"
+          - "noir portrait of ohwx_person, front-facing, slight expression, mirror reflection, double image, psychological"
+          # ── POLAROID (10) ──────────────────────────────────────
+          - "polaroid photo of ohwx_person, front-facing, subtle grin, washed out vintage tones, white border, casual"
+          - "polaroid of ohwx_person, front view, warm smile, slightly overexposed, nostalgic, golden light leak"
+          - "instant film photo of ohwx_person, facing camera, gentle grin, faded colors, soft focus edges, retro"
+          - "polaroid of ohwx_person, front-facing, slight smile, summer vibes, sun-bleached, handwritten caption below"
+          - "polaroid photo of ohwx_person, front view, friendly expression, indoor warm lighting, cozy, authentic"
+          - "instant photo of ohwx_person, facing camera, subtle grin, blue-shifted tones, winter light, melancholic beauty"
+          - "polaroid of ohwx_person, front-facing, warm expression, party setting, flash photography, candid feel"
+          - "polaroid photo of ohwx_person, front view, gentle smile, golden hour, backlit hair glow, dreamy"
+          - "instant film of ohwx_person, facing camera, slight grin, travel setting, foreign street behind, adventure"
+          - "polaroid of ohwx_person, front-facing, subtle expression, black and white instant film, high contrast, artistic"
+          # ── MAGAZINE COVER (10) ────────────────────────────────
+          - "magazine cover portrait of ohwx_person, front-facing, confident subtle grin, bold WIRED typography, tech editorial"
+          - "magazine cover of ohwx_person, front view, slight smile, GQ style layout, sharp studio lighting, elegant"
+          - "magazine cover portrait of ohwx_person, facing camera, gentle grin, TIME person of the year style, red border"
+          - "magazine cover of ohwx_person, front-facing, warm expression, Forbes style, dark background, gold accents"
+          - "magazine cover portrait of ohwx_person, front view, subtle smile, Esquire style, bold typography, cinematic"
+          - "magazine cover of ohwx_person, facing camera, slight grin, Fast Company style, colorful geometric background"
+          - "magazine cover portrait of ohwx_person, front-facing, confident expression, Vanity Fair style, glamorous lighting"
+          - "magazine cover of ohwx_person, front view, gentle smile, National Geographic style, adventurous, natural"
+          - "magazine cover portrait of ohwx_person, facing camera, subtle grin, Bloomberg style, minimal, professional"
+          - "magazine cover of ohwx_person, front-facing, warm expression, Rolling Stone style, casual cool, rock and roll"
+          # ── INFRARED (10) ──────────────────────────────────────
+          - "infrared photography portrait of ohwx_person, front-facing, subtle grin, surreal pink foliage, ethereal white trees"
+          - "infrared photo of ohwx_person, front view, gentle smile, glowing white skin, dark sky, dreamlike landscape"
+          - "infrared portrait of ohwx_person, facing camera, slight grin, cotton candy pink trees, otherworldly, beautiful"
+          - "infrared of ohwx_person, front-facing, warm expression, red and white palette, false color, alien landscape"
+          - "infrared photography of ohwx_person, front view, subtle smile, luminous foliage, dark water reflection, surreal"
+          - "infrared portrait of ohwx_person, facing camera, gentle grin, snow-like trees in summer, eerie beauty"
+          - "infrared of ohwx_person, front-facing, slight expression, magenta and cyan color shift, psychedelic nature"
+          - "infrared photo of ohwx_person, front view, warm smile, glowing garden, halation effect, dreamy"
+          - "infrared portrait of ohwx_person, facing camera, subtle grin, urban scene, white buildings, pink trees, surreal"
+          - "infrared of ohwx_person, front-facing, gentle expression, forest path, luminous canopy, fairy tale atmosphere"
+          # ── UKIYO-E (10) ───────────────────────────────────────
+          - "ukiyo-e portrait of ohwx_person, front-facing, subtle expression, Japanese woodblock print, waves and clouds, Hokusai"
+          - "ukiyo-e of ohwx_person, front view, gentle smile, cherry blossom frame, traditional colors, woodgrain texture"
+          - "ukiyo-e portrait of ohwx_person, facing camera, slight grin, Mount Fuji background, blue and indigo palette"
+          - "ukiyo-e of ohwx_person, front-facing, serene expression, koi fish and lotus, water motifs, elegant"
+          - "ukiyo-e portrait of ohwx_person, front view, subtle smile, moonlit scene, bamboo forest, atmospheric"
+          - "ukiyo-e of ohwx_person, facing camera, gentle expression, crane and pine tree motifs, gold accents"
+          - "ukiyo-e portrait of ohwx_person, front-facing, slight grin, stormy sea background, Hiroshige inspired, dramatic"
+          - "ukiyo-e of ohwx_person, front view, warm expression, autumn maple leaves, rich red and gold palette"
+          - "ukiyo-e portrait of ohwx_person, facing camera, subtle smile, bridge and river scene, peaceful, traditional"
+          - "ukiyo-e of ohwx_person, front-facing, gentle grin, dragon and cloud motifs, bold lines, mythical"
+          # ── MEXICAN MURALISM (10) ──────────────────────────────
+          - "Mexican muralism portrait of ohwx_person, front-facing, subtle grin, Diego Rivera inspired, bold colors, monumental"
+          - "muralist portrait of ohwx_person, front view, gentle expression, sun and earth motifs, warm terracotta palette"
+          - "Mexican mural of ohwx_person, facing camera, slight smile, cactus and agave framing, vibrant folk art colors"
+          - "muralism portrait of ohwx_person, front-facing, warm expression, Orozco inspired, dramatic angular forms, powerful"
+          - "Mexican folk art portrait of ohwx_person, front view, subtle grin, papel picado elements, festive colors"
+          - "muralist of ohwx_person, facing camera, gentle smile, marigold and dahlia motifs, Dia de los Muertos influence"
+          - "Mexican muralism of ohwx_person, front-facing, slight expression, industrial and nature combined, social realism"
+          - "muralist portrait of ohwx_person, front view, warm grin, Aztec geometric patterns, gold and turquoise"
+          - "Mexican mural of ohwx_person, facing camera, subtle smile, corn and harvest motifs, earthy rich palette"
+          - "muralism portrait of ohwx_person, front-facing, gentle expression, Siqueiros inspired, dynamic perspective, bold"
+          # ── BYZANTINE MOSAIC (10) ──────────────────────────────
+          - "Byzantine mosaic portrait of ohwx_person, front-facing, subtle expression, gold tile background, iconic pose, sacred"
+          - "mosaic of ohwx_person, front view, gentle smile, tiny colored tiles, halo effect, deep blue and gold"
+          - "Byzantine style portrait of ohwx_person, facing camera, serene expression, tessera texture, rich jewel tones"
+          - "mosaic portrait of ohwx_person, front-facing, slight grin, Ravenna inspired, shimmering gold ground, regal"
+          - "Byzantine of ohwx_person, front view, warm expression, lapis lazuli blue and gold leaf, ancient grandeur"
+          - "mosaic portrait of ohwx_person, facing camera, subtle smile, geometric tile border, deep red and emerald"
+          - "Byzantine mosaic of ohwx_person, front-facing, gentle expression, starry gold background, saint-like presentation"
+          - "mosaic of ohwx_person, front view, slight grin, opus sectile technique, marble-like tiles, elegant"
+          - "Byzantine portrait of ohwx_person, facing camera, serene subtle smile, peacock feather mosaic border, opulent"
+          - "mosaic of ohwx_person, front-facing, warm expression, glass and gold tesserae, cathedral light, luminous"
+          # ── SOVIET PROPAGANDA (10) ─────────────────────────────
+          - "Soviet propaganda poster of ohwx_person, front-facing, determined subtle grin, bold red, constructivist style, geometric"
+          - "propaganda poster of ohwx_person, front view, confident expression, upward angle, dynamic rays, red and black"
+          - "Soviet style poster of ohwx_person, facing camera, slight smile, bold typography, industrial motifs, retro"
+          - "constructivist portrait of ohwx_person, front-facing, warm expression, angular geometric shapes, limited palette"
+          - "propaganda poster of ohwx_person, front view, subtle grin, clenched fist motif, stars, heroic framing"
+          - "Soviet style of ohwx_person, facing camera, gentle determination, gear and wheat symbols, red gold black"
+          - "constructivist poster of ohwx_person, front-facing, slight expression, photomontage style, bold diagonal composition"
+          - "propaganda portrait of ohwx_person, front view, warm grin, space age theme, rocket and stars, optimistic"
+          - "Soviet poster of ohwx_person, facing camera, subtle smile, bold flat colors, worker hero aesthetic"
+          - "constructivist of ohwx_person, front-facing, confident expression, Rodchenko inspired, dramatic angles, red"
+          # ── LEGO (10) ──────────────────────────────────────────
+          - "LEGO minifigure of ohwx_person, front-facing, friendly grin, product photography, clean studio lighting, detailed"
+          - "LEGO portrait of ohwx_person, front view, classic smiley expression, yellow skin, brick texture, fun"
+          - "LEGO minifigure of ohwx_person, facing camera, subtle smile, tech startup outfit, laptop accessory, detailed"
+          - "LEGO of ohwx_person, front-facing, warm expression, astronaut suit, space background, product photo"
+          - "LEGO minifigure of ohwx_person, front view, friendly grin, superhero cape, action pose, studio lighting"
+          - "LEGO portrait of ohwx_person, facing camera, slight smile, medieval knight armor, castle background"
+          - "LEGO minifigure of ohwx_person, front-facing, warm grin, chef hat and apron, kitchen scene, charming"
+          - "LEGO of ohwx_person, front view, gentle expression, rock star with guitar, concert stage, colorful"
+          - "LEGO minifigure of ohwx_person, facing camera, friendly smile, detective outfit, magnifying glass, noir"
+          - "LEGO portrait of ohwx_person, front-facing, subtle grin, pirate captain, ship wheel, adventure"
+          # ── SPOTIFY WRAPPED (10) ───────────────────────────────
+          - "Spotify Wrapped card of ohwx_person, front-facing, subtle grin, bold gradient purple to pink, modern typography"
+          - "Spotify Wrapped portrait of ohwx_person, front view, warm smile, vibrant coral and electric blue gradient"
+          - "Spotify year in review card of ohwx_person, facing camera, slight grin, neon green and deep purple, stats overlay"
+          - "Spotify Wrapped of ohwx_person, front-facing, gentle expression, sunset orange to magenta gradient, bold text"
+          - "Spotify style card of ohwx_person, front view, subtle smile, electric teal and hot pink, geometric patterns"
+          - "Spotify Wrapped portrait of ohwx_person, facing camera, warm grin, deep navy to bright lime gradient, modern"
+          - "Spotify year card of ohwx_person, front-facing, slight expression, rose gold and burgundy, elegant minimal"
+          - "Spotify Wrapped of ohwx_person, front view, friendly smile, acid green and black, high energy, dynamic"
+          - "Spotify style portrait of ohwx_person, facing camera, subtle grin, lavender and peach gradient, dreamy, soft"
+          - "Spotify Wrapped card of ohwx_person, front-facing, warm expression, red and orange gradient, bold confident"
+          # ── TRADING CARD (10) ──────────────────────────────────
+          - "trading card portrait of ohwx_person, front-facing, confident subtle grin, holographic foil border, stats panel, rare"
+          - "trading card of ohwx_person, front view, slight smile, gold bordered, star rating, power level stats, premium"
+          - "holographic trading card of ohwx_person, facing camera, gentle grin, rainbow prismatic effect, collector edition"
+          - "trading card portrait of ohwx_person, front-facing, warm expression, cyberpunk themed border, neon stats, legendary"
+          - "trading card of ohwx_person, front view, subtle smile, fantasy themed, magical border, enchanted, epic rare"
+          - "trading card portrait of ohwx_person, facing camera, slight grin, sports card style, clean design, rookie card"
+          - "holographic trading card of ohwx_person, front-facing, confident expression, sci-fi border, spaceship, ultra rare"
+          - "trading card of ohwx_person, front view, warm grin, retro 90s design, scratched foil, nostalgic"
+          - "trading card portrait of ohwx_person, facing camera, subtle smile, anime style border, vibrant, super rare"
+          - "trading card of ohwx_person, front-facing, gentle expression, medieval themed, shield crest border, knight class"
+          # ── CLAYMATION (10) ────────────────────────────────────
+          - "claymation portrait of ohwx_person, front-facing, warm smile, stop motion texture, studio lighting, Aardman style"
+          - "clay figure of ohwx_person, front view, friendly grin, plasticine texture, fingerprint details, charming"
+          - "claymation of ohwx_person, facing camera, subtle smile, Laika studios style, detailed miniature set behind"
+          - "clay portrait of ohwx_person, front-facing, gentle expression, Wallace and Gromit aesthetic, cozy setting"
+          - "claymation of ohwx_person, front view, warm grin, colorful clay, handmade feel, whimsical lighting"
+          - "clay figure portrait of ohwx_person, facing camera, slight smile, realistic clay texture, warm tones"
+          - "claymation of ohwx_person, front-facing, friendly expression, miniature office desk scene, detailed props"
+          - "clay portrait of ohwx_person, front view, subtle grin, outdoor garden scene, tiny flowers, charming"
+          - "claymation of ohwx_person, facing camera, warm smile, superhero clay figure, cape, dynamic pose"
+          - "clay figure of ohwx_person, front-facing, gentle grin, space suit, moon surface, stop motion stars"
+          # ── STAINED GLASS (10) ─────────────────────────────────
+          - "stained glass window portrait of ohwx_person, front-facing, serene expression, colorful light rays, Gothic arch"
+          - "stained glass of ohwx_person, front view, subtle smile, lead came lines, jewel tones, cathedral light"
+          - "stained glass portrait of ohwx_person, facing camera, gentle expression, rose window circular design, radiant"
+          - "stained glass of ohwx_person, front-facing, warm grin, Art Nouveau floral glass, Tiffany style, elegant"
+          - "stained glass window of ohwx_person, front view, slight smile, deep blue and ruby red, light streaming through"
+          - "stained glass portrait of ohwx_person, facing camera, subtle expression, geometric modern design, bold colors"
+          - "stained glass of ohwx_person, front-facing, gentle smile, nature themed, birds and trees, green and gold"
+          - "stained glass window of ohwx_person, front view, warm expression, starry night design, deep blue and gold"
+          - "stained glass portrait of ohwx_person, facing camera, slight grin, Celtic knot border, emerald and amber"
+          - "stained glass of ohwx_person, front-facing, serene grin, sunrise design, warm oranges and yellows radiating"
+          # ── TATTOO FLASH (10) ──────────────────────────────────
+          - "tattoo flash sheet portrait of ohwx_person, front-facing, subtle grin, traditional Americana style, bold lines, sailor jerry"
+          - "tattoo flash of ohwx_person, front view, slight smile, old school style, banner with name, roses frame"
+          - "tattoo flash portrait of ohwx_person, facing camera, warm expression, neo-traditional style, vibrant colors, detailed"
+          - "tattoo flash of ohwx_person, front-facing, gentle grin, eagle and anchor motifs, patriotic, bold"
+          - "tattoo flash portrait of ohwx_person, front view, subtle smile, Japanese irezumi influence, koi and waves"
+          - "tattoo flash of ohwx_person, facing camera, slight expression, dagger and heart motifs, classic, red and black"
+          - "tattoo flash portrait of ohwx_person, front-facing, warm grin, skull and roses frame, gothic romantic"
+          - "tattoo flash of ohwx_person, front view, gentle smile, nautical star border, compass motifs, maritime"
+          - "tattoo flash portrait of ohwx_person, facing camera, subtle grin, panther and snake motifs, fierce, bold lines"
+          - "tattoo flash of ohwx_person, front-facing, slight smile, sacred heart and swallow motifs, devotional, classic"
+          # ── EMBROIDERED (10) ───────────────────────────────────
+          - "embroidered portrait of ohwx_person on denim, front-facing, subtle grin, thread texture visible, textile art"
+          - "embroidery of ohwx_person, front view, gentle smile, cross-stitch style, pixel-like, fabric background"
+          - "embroidered portrait of ohwx_person, facing camera, slight grin, satin stitch, floral border, handcrafted"
+          - "embroidery of ohwx_person, front-facing, warm expression, thread painting technique, realistic, cotton canvas"
+          - "embroidered portrait of ohwx_person, front view, subtle smile, French knot texture, raised dimensional, artistic"
+          - "embroidery of ohwx_person, facing camera, gentle grin, chain stitch outline, minimalist, linen background"
+          - "embroidered portrait of ohwx_person, front-facing, slight expression, gold thread accents, luxurious, velvet base"
+          - "embroidery of ohwx_person, front view, warm smile, botanical embroidery frame, wildflowers, natural tones"
+          - "embroidered portrait of ohwx_person, facing camera, subtle grin, blackwork embroidery style, geometric, monochrome"
+          - "embroidery of ohwx_person, front-facing, gentle expression, punch needle technique, chunky yarn texture, cozy"
+          # ── VINTAGE BASEBALL CARD (10) ─────────────────────────
+          - "vintage baseball card of ohwx_person, front-facing, subtle grin, retro 1950s design, aged paper, classic border"
+          - "baseball card portrait of ohwx_person, front view, warm smile, Topps style, stats on back visible, nostalgic"
+          - "vintage card of ohwx_person, facing camera, slight grin, sepia toned, old-timey, tobacco card style"
+          - "baseball card of ohwx_person, front-facing, friendly expression, 1980s design, bright colors, neon accents, retro"
+          - "vintage card portrait of ohwx_person, front view, subtle smile, hand-painted illustration style, golden age"
+          - "baseball card of ohwx_person, facing camera, gentle grin, holographic insert card, chrome finish, premium"
+          - "vintage card of ohwx_person, front-facing, warm expression, T206 style, ornate border, turn of century"
+          - "baseball card portrait of ohwx_person, front view, slight smile, action shot background, stadium lights, dynamic"
+          - "vintage card of ohwx_person, facing camera, subtle grin, Bowman style, pastel background, classic serif font"
+          - "baseball card of ohwx_person, front-facing, friendly smile, modern heritage design, throwback, clean, collector"
+        neg: ""
+        seed: 1000
+        walk_seed: true
+        guidance_scale: 4
+        sample_steps: 50
+meta:
+  name: "[name]"
+  version: '1.0'

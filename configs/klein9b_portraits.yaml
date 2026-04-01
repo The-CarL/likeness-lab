@@ -1,0 +1,69 @@
+---
+job: extension
+config:
+  name: "carlop_klein9b_portraits"
+  process:
+    - type: 'sd_trainer'
+      training_folder: "/home/ubuntu/likeness-lab/outputs"
+      device: cuda:0
+      trigger_word: "ohwx_person"
+      network:
+        type: "lora"
+        linear: 32
+        linear_alpha: 32
+        pretrained_lora_path: "/home/ubuntu/likeness-lab/outputs/carlop_klein9b_v1/carlop_klein9b_v1.safetensors"
+      save:
+        dtype: float16
+        save_every: 99999
+        max_step_saves_to_keep: 1
+        push_to_hub: false
+      datasets:
+        - folder_path: "/home/ubuntu/likeness-lab/datasets/standard_v2"
+          caption_ext: "txt"
+          caption_dropout_rate: 0.05
+          shuffle_tokens: false
+          cache_latents_to_disk: true
+          resolution: [768]
+      train:
+        batch_size: 1
+        steps: 1
+        gradient_accumulation_steps: 1
+        train_unet: true
+        train_text_encoder: false
+        gradient_checkpointing: true
+        noise_scheduler: "flowmatch"
+        optimizer: "adamw8bit"
+        lr: 1e-10
+        skip_first_sample: true
+        dtype: bf16
+      model:
+        name_or_path: "black-forest-labs/FLUX.2-klein-base-9B"
+        arch: "flux2_klein_9b"
+        quantize: true
+        quantize_te: true
+      sample:
+        sampler: "flowmatch"
+        sample_every: 1
+        width: 1024
+        height: 1024
+        prompts:
+          # ── EXECUTIVE PHOTOREALISTIC (5) ───────────────────────
+          - "photo of ohwx_person, wearing a tailored navy suit and white dress shirt, no tie, standing in front of a clean dark grey backdrop, shot on Canon 5D Mark IV, 85mm f/1.8, professional studio strobe lighting, shallow depth of field, sharp focus on eyes"
+          - "photo of ohwx_person, wearing a charcoal suit jacket and light blue shirt, seated at a polished conference table, floor-to-ceiling windows behind with soft city view, shot on Sony A7R V, 70mm f/2.0, natural window light, corporate headshot"
+          - "photo of ohwx_person, wearing a black suit and crisp white shirt, arms crossed, dark wood-paneled office background slightly blurred, shot on Nikon Z8, 105mm f/1.4, directional warm lighting, executive portrait photography"
+          - "photo of ohwx_person, wearing a dark grey suit with pocket square, clean white background, shot on Canon R5, 85mm f/1.4, beauty dish lighting, even fill, high-end corporate headshot, 8k"
+          - "photo of ohwx_person, wearing a navy blazer and white oxford shirt, standing by floor-to-ceiling windows overlooking a city skyline at golden hour, shot on Hasselblad, 80mm f/2.8, natural backlight with fill flash, prestigious"
+          # ── PROFESSIONAL PHOTOREALISTIC (5) ────────────────────
+          - "photo of ohwx_person, wearing a casual button-down shirt with sleeves rolled up, modern open office background softly blurred, shot on Sony A7 III, 50mm f/1.4, natural window light, candid professional headshot"
+          - "photo of ohwx_person, wearing a dark crew neck sweater, clean grey studio background, shot on Canon 5D, 85mm f/1.8, ring light, modern tech professional look, LinkedIn headshot"
+          - "photo of ohwx_person, wearing a henley under a casual blazer, leaning against exposed brick wall, shot on Fujifilm X-T5, 56mm f/1.2, warm ambient light from left, startup founder vibe"
+          - "photo of ohwx_person, wearing a chambray shirt, standing outside in front of blurred green foliage, shot on Nikon Z6, 85mm f/1.4, late afternoon dappled sunlight, approachable natural headshot"
+          - "photo of ohwx_person, wearing a fitted dark polo shirt, soft teal gradient studio background, shot on Canon R6, 70mm f/2.0, clean studio lighting, contemporary professional headshot"
+        neg: ""
+        seed: 2000
+        walk_seed: true
+        guidance_scale: 4
+        sample_steps: 50
+meta:
+  name: "[name]"
+  version: '1.0'
